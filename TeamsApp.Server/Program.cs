@@ -1,30 +1,26 @@
-using Microsoft.EntityFrameworkCore;
-using TeamsApp.Server.Data;
-using Microsoft.AspNetCore.Components.WebAssembly.Server;
+﻿var builder = WebApplication.CreateBuilder(args);
 
-var builder = WebApplication.CreateBuilder(args);
-
-builder.Services.AddDbContext<MyDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-builder.Services.AddControllers();
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowClient",
-        policy => policy.WithOrigins("https://teamsapp-enss.onrender.com/")
-                        .AllowAnyHeader()
-                        .AllowAnyMethod());
-});
+// ✅ Required
+builder.Services.AddRazorPages();
+builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
 
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Error");
+    app.UseHsts();
+}
+
+app.UseHttpsRedirection();
+
+// ✅ Serve Blazor + static files
 app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
 
-app.MapRazorPages();
+app.UseRouting();
 
-app.UseHttpsRedirection();
-app.UseCors("AllowClient");
+app.MapRazorPages();
 app.MapControllers();
 app.MapFallbackToFile("index.html");
 
