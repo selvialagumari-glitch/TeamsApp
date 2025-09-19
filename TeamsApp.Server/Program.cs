@@ -10,7 +10,7 @@ builder.Services.AddControllers();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowClient",
-        policy => policy.WithOrigins("https://teamsapp-server.onrender.com")
+        policy => policy.WithOrigins("https://teamsapp-enss.onrender.com/")
                         .AllowAnyHeader()
                         .AllowAnyMethod());
 });
