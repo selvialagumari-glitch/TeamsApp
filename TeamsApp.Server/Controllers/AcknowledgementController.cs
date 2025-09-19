@@ -34,5 +34,24 @@ namespace TeamsApp.Server.Controllers
 
             return Ok(new { success = true, acknowledgement });
         }
+
+        // ✅ New GET API to check acknowledgment status
+        [HttpGet("{email}")]
+        public async Task<IActionResult> GetAcknowledgementStatus(string email)
+        {
+            var acknowledgement = await _context.Acknowledgements
+                .FirstOrDefaultAsync(a => a.Email == email);
+
+            if (acknowledgement == null)
+            {
+                return NotFound(new { message = "Record not found" });
+            }
+
+            return Ok(new
+            {
+                email = acknowledgement.Email,
+                isAcknowledged = acknowledgement.Is_Acknowledged
+            });
+        }
     }
 }

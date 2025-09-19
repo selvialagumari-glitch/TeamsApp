@@ -9,21 +9,8 @@
     <link rel="stylesheet" href="css/app.css" />
     <link rel="icon" type="image/png" href="favicon.png" />
     <link href="MyBlazorWasmApp.styles.css" rel="stylesheet" />
-    <style>
-        /*        #acknowledgement-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: white;
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }*/
 
+    <style>
         #pdf-viewer {
             max-width: 90%;
             max-height: 70%;
@@ -40,7 +27,7 @@
             }
 
         #acknowledge-box {
-            display: flex
+            display: flex;
         }
 
         .user-info {
@@ -53,21 +40,21 @@
 </head>
 
 <body>
+    <!-- Acknowledgement Container -->
     <div id="acknowledgement-container"
-         style="max-width: 900px; margin: 10px auto; font-family: Arial, sans-serif; text-align: center; display: flex; flex-direction: column; align-items: center;">
+         style="max-width: 900px; margin: 10px auto; font-family: Arial, sans-serif; text-align: center; display: none; flex-direction: column; align-items: center;">
 
         <!-- PDF Viewer -->
-        <div id="pdf-viewer" style="width: 100%; border: 1px solid #ddd; border-radius: 8px; height: 400px; margin-bottom: 20px;">
-            <!-- Your PDF will load here -->
+        <div id="pdf-viewer"
+             style="width: 100%; border: 1px solid #ddd; border-radius: 8px; height: 430px; margin-bottom: 20px;">
         </div>
 
         <!-- Acknowledgement Text -->
-        <div style="display: flex; align-items: flex-start; justify-content: center; text-align: left; width: 80%; margin-bottom: 20px;">
+        <div style="display: flex; align-items: flex-start; justify-content: center; text-align: left; width: 90%; margin-bottom: 20px;">
             <label style="display: flex; align-items: flex-start; cursor: pointer;">
                 <input type="checkbox" id="acknowledge" style="margin-right: 10px; transform: scale(1.2);" />
-                <span>
+                <span style="font-size:11px">
                     I acknowledge that I am responsible for adhering to these rules and guidelines when engaging in cross-selling activities.
-
                     I understand that failure to comply with these rules may result in inability to access the <strong>Universal Client List</strong>.
                     <br />
                     By signing below, I affirm that I have been given the opportunity to ask questions and seek clarification regarding any aspects of the <strong>Cross-Selling</strong> rules and guidelines.
@@ -76,10 +63,10 @@
         </div>
 
         <!-- Proceed Button -->
-        <button id="proceedBtn" class="btn btn-primary" disabled>Proceed</button>
+        <button id="proceedBtn" class="btn btn-primary" disabled>Acknowledge & Continue</button>
     </div>
 
-
+    <!-- Blazor App -->
     <div id="app" style="display:none;">
         <svg class="loading-progress">
             <circle r="40%" cx="50%" cy="50%" />
@@ -88,12 +75,14 @@
         <div class="loading-progress-text">Loading...</div>
     </div>
 
+    <!-- Error UI -->
     <div id="blazor-error-ui">
         An unhandled error has occurred.
         <a href="." class="reload">Reload</a>
         <span class="dismiss">🗙</span>
     </div>
 
+    <!-- Scripts -->
     <script src="_framework/blazor.webassembly.js"></script>
     <script src="https://res.cdn.office.net/teams-js/2.0.0/js/MicrosoftTeams.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -105,21 +94,15 @@
 
         // Get Teams Context safely
         window.getTeamsContext = async function () {
-            return new Promise(async (resolve, reject) => {
+            return new Promise(async (resolve) => {
                 try {
-                    // Check if we're in Teams
                     if (typeof microsoftTeams === 'undefined') {
                         resolve(null);
                         return;
                     }
 
-                    // Initialize the Teams SDK
                     await microsoftTeams.app.initialize();
-
-                    // Get the context
                     const context = await microsoftTeams.app.getContext();
-
-                    console.log("Teams context:", context);
 
                     resolve({
                         userPrincipalName: context.user.userPrincipalName || "",
@@ -164,14 +147,32 @@
         async function initApp() {
             try {
                 const context = await window.getTeamsContext();
-                const inTeams = true;
+                const email = context?.userPrincipalName || "rajesh96@qkl5.onmicrosoft.com!";
 
-                if (inTeams) {
-                    // Display user information
+                let isAcknowledged = false;
 
-                    const ackContainer = document.getElementById("acknowledgement-container");
+                // 🔹 Call GET API to check if already acknowledged
+                try {
+                    const response = await fetch(`https://localhost:7042/api/acknowledgement/${email}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        isAcknowledged = data.isAcknowledged;
+                    }
+                } catch (err) {
+                    console.error("Error fetching acknowledgement status:", err);
+                }
+
+                const ackContainer = document.getElementById("acknowledgement-container");
+                const appContainer = document.getElementById("app");
+
+                if (isAcknowledged) {
+                    // ✅ Already acknowledged → Show app directly
+                    ackContainer.style.display = "none";
+                    appContainer.style.display = "block";
+                } else {
+                    // ❌ Not acknowledged → Show PDF
                     ackContainer.style.display = "flex";
-                    document.getElementById("app").style.display = "none";
+                    appContainer.style.display = "none";
 
                     renderPdf("B2B Selling  Playbook_Final_v3.pdf");
 
@@ -179,21 +180,29 @@
                         document.getElementById("proceedBtn").disabled = !this.checked;
                     });
 
-                    document.getElementById("proceedBtn").addEventListener("click", function () {
-                        ackContainer.style.display = "none";
-                        document.getElementById("app").style.display = "block";
+                    document.getElementById("proceedBtn").addEventListener("click", async function () {
+                        try {
+                            const response = await fetch("https://localhost:7042/api/acknowledgement/confirm", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ email: email })
+                            });
+
+                            const result = await response.json();
+                            if (result.success) {
+                                ackContainer.style.display = "none";
+                                appContainer.style.display = "block";
+                            } else {
+                                alert(result.message);
+                            }
+                        } catch (err) {
+                            console.error("Error calling API:", err);
+                        }
                     });
-                } else {
-                    // If not inside Teams, skip acknowledgement
-                    const ackContainer = document.getElementById("acknowledgement-container");
-                    if (ackContainer) ackContainer.style.display = "none";
-                    document.getElementById("app").style.display = "block";
                 }
             } catch (error) {
                 console.error("Error initializing app:", error);
-                // If anything fails, show the app anyway
-                const ackContainer = document.getElementById("acknowledgement-container");
-                if (ackContainer) ackContainer.style.display = "none";
+                document.getElementById("acknowledgement-container").style.display = "none";
                 document.getElementById("app").style.display = "block";
             }
         }
@@ -204,32 +213,6 @@
         } else {
             initApp();
         }
-    </script>
-    <script>
-        document.getElementById("proceedBtn").addEventListener("click", async function () {
-            try {
-                const email = window.currentUser?.userPrincipalName || "test@example.com";
-
-                const response = await fetch("https://teamsapp-enss.onrender.com/api/acknowledgement/confirm", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ email: email })
-                });
-
-                const result = await response.json();
-                console.log("API Response:", result);
-
-                if (result.success) {
-                    document.getElementById("acknowledgement-container").style.display = "none";
-                    document.getElementById("app").style.display = "block";
-                } else {
-                    alert(result.message);
-                }
-            } catch (err) {
-                console.error("Error calling API:", err);
-            }
-        });
-
     </script>
 </body>
 </html>
