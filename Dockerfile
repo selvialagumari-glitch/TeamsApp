@@ -3,10 +3,10 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
 COPY . .
-RUN dotnet restore
+RUN dotnet restore TeamsApp.sln
+RUN dotnet publish TeamsApp.Server/TeamsApp.Server.csproj -c Release -o /app
 
-# adjust this line to your actual Server project path
-RUN dotnet publish ./TeamsApp.Server/TeamsApp.Server.csproj -c Release -o /app
+RUN dotnet restore
 
 # Stage 2: Run
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
