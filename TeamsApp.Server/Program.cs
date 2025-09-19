@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using TeamsApp.Server.Data;
+using Microsoft.AspNetCore.Components.WebAssembly.Server;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +17,11 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+app.UseBlazorFrameworkFiles();
+app.UseStaticFiles();
+
+app.MapRazorPages();
 
 app.UseHttpsRedirection();
 app.UseCors("AllowClient");
