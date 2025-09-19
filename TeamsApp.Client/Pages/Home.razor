@@ -1,0 +1,37 @@
+﻿@page "/"
+@inject IJSRuntime JS
+
+<h3>Hello, @UserName!</h3>
+
+@code {
+    private string UserName = "Guest";
+    private bool _loaded = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_loaded)
+        {
+            _loaded = true;
+            try
+            {
+                var context = await JS.InvokeAsync<TeamsContext>("getTeamsContext");
+                if (context != null && !string.IsNullOrEmpty(context.UserPrincipalName))
+                {
+                    UserName = context.UserPrincipalName;
+                    StateHasChanged(); // Refresh UI
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"JS interop failed: {ex.Message}");
+                UserName = "Guest";
+            }
+        }
+    }
+
+    public class TeamsContext
+    {
+        public string UserPrincipalName { get; set; } = "";
+        public string DisplayName { get; set; } = "";
+    }
+}

@@ -1,0 +1,25 @@
+using Microsoft.EntityFrameworkCore;
+using TeamsApp.Server.Data;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddDbContext<MyDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddControllers();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowClient",
+        policy => policy.WithOrigins("https://localhost:7197")
+                        .AllowAnyHeader()
+                        .AllowAnyMethod());
+});
+
+var app = builder.Build();
+
+app.UseHttpsRedirection();
+app.UseCors("AllowClient");
+app.MapControllers();
+app.MapFallbackToFile("index.html");
+
+app.Run();

@@ -1,0 +1,6 @@
+@TeamsApp.Server_HostAddress = http://localhost:5178
+
+GET {{TeamsApp.Server_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
