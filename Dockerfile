@@ -1,23 +1,32 @@
-# 1. Build stage
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
-WORKDIR /src
+# Stage 1: Build
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /app
 
-# copy csproj files and restore
-COPY ["TeamsApp.Server/TeamsApp.Server.csproj", "TeamsApp.Server/"]
-COPY ["TeamsApp.Client/TeamsApp.Client.csproj", "TeamsApp.Client/"]
-COPY ["TeamsApp.Shared/TeamsApp.Shared.csproj", "TeamsApp.Shared/"]
+# Copy solution and project files
+COPY *.sln . 
+COPY TeamsApp.Server/TeamsApp.Server.csproj ./TeamsApp.Server/
+COPY TeamsApp.Client/TeamsApp.Client.csproj ./TeamsApp.Client/
+COPY TeamsApp.Shared/TeamsApp.Shared.csproj ./TeamsApp.Shared/
 
-RUN dotnet restore "TeamsApp.Server/TeamsApp.Server.csproj"
+# Restore dependencies
+RUN dotnet restore
 
-# copy everything else
+# Copy everything else
 COPY . .
 
-# publish the server project
-WORKDIR "/src/TeamsApp.Server"
-RUN dotnet publish "TeamsApp.Server.csproj" -c Release -o /app/publish
+# Build and publish the server project (includes client automatically)
+RUN dotnet publish TeamsApp.Server/TeamsApp.Server.csproj -c Release -o /app/publish
 
-# 2. Runtime stage
-FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
+# Stage 2: Runtime
+FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
+
+# Copy published output from build stage
 COPY --from=build /app/publish .
+
+# Expose Render port
+ENV ASPNETCORE_URLS=http://+:$PORT
+EXPOSE $PORT
+
+# Start the server app
 ENTRYPOINT ["dotnet", "TeamsApp.Server.dll"]
