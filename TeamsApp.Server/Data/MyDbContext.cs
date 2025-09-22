@@ -12,7 +12,7 @@ namespace TeamsApp.Server.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<AcknowledgementDto>()
-                .ToTable("UserAcknowledgement", "UCL")
+            .ToTable("useracknowledgement", "public")
                 .HasKey(a => a.Email);
         }
     }

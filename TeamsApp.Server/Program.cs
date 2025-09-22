@@ -9,7 +9,7 @@ builder.Services.AddRazorPages();
 
 // Register DbContext
 builder.Services.AddDbContext<MyDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
 );
 
 // Add CORS
@@ -17,7 +17,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("https://teamsapp-enss.onrender.com")
+        policy.WithOrigins("https://localhost:7197")
               .AllowAnyMethod()
               .AllowAnyHeader();
     });

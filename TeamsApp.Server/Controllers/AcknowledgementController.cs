@@ -27,8 +27,8 @@ namespace TeamsApp.Server.Controllers
                 return NotFound(new { message = "Record not found" });
             }
 
-            acknowledgement.Is_Acknowledged = true;
-            acknowledgement.Updated_At = DateTime.UtcNow;
+            acknowledgement.IsAcknowledged = true;
+            acknowledgement.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
 
@@ -50,7 +50,7 @@ namespace TeamsApp.Server.Controllers
             return Ok(new
             {
                 email = acknowledgement.Email,
-                isAcknowledged = acknowledgement.Is_Acknowledged
+                isAcknowledged = acknowledgement.IsAcknowledged
             });
         }
     }
