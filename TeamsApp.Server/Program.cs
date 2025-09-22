@@ -17,7 +17,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("https://teamsapp-enss.onrender.com/")
+        policy.WithOrigins("https://teamsapp-enss.onrender.com")
               .AllowAnyMethod()
               .AllowAnyHeader();
     });
@@ -45,7 +45,7 @@ app.UseAuthorization();
 
 app.MapRazorPages();
 app.MapControllers();
-app.MapFallbackToFile("index.html"); // for Blazor WASM client routing
+app.MapFallbackToFile("index.html");
 
 if (app.Environment.IsDevelopment())
 {
