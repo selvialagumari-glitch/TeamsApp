@@ -10,6 +10,7 @@ builder.Services.AddRazorPages();
 // Register DbContext
 builder.Services.AddDbContext<MyDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
+           .LogTo(Console.WriteLine, Microsoft.Extensions.Logging.LogLevel.Information)
 );
 
 // Add CORS
