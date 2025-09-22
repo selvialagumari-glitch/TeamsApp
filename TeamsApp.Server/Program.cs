@@ -17,7 +17,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("https://localhost:7197")
+        policy.WithOrigins("https://teamsapp-enss.onrender.com")
               .AllowAnyMethod()
               .AllowAnyHeader();
     });
