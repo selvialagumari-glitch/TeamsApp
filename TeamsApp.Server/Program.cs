@@ -4,7 +4,7 @@ using TeamsApp.Server.Data;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllers();
 builder.Services.AddRazorPages();
 
 // Register DbContext
@@ -24,7 +24,6 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
-
 
 // Configure middleware
 if (!app.Environment.IsDevelopment())
@@ -46,16 +45,5 @@ app.UseAuthorization();
 app.MapRazorPages();
 app.MapControllers();
 app.MapFallbackToFile("index.html");
-
-if (app.Environment.IsDevelopment())
-{
-    app.Urls.Add("https://localhost:5001");
-}
-else
-{
-    var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
-    app.Urls.Add($"http://*:{port}");
-}
-
 
 app.Run();
