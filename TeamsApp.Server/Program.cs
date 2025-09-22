@@ -13,12 +13,13 @@ builder.Services.AddDbContext<MyDbContext>(options =>
            .LogTo(Console.WriteLine, Microsoft.Extensions.Logging.LogLevel.Information)
 );
 
+
 // Add CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("https://teamsapp-integration.onrender.com")
+        policy.WithOrigins("https://localhost:7197")
               .AllowAnyMethod()
               .AllowAnyHeader();
     });
