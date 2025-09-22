@@ -10,7 +10,7 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.
 
 builder.Services.AddScoped(sp => new HttpClient
 {
-    BaseAddress = new Uri("https://localhost:5001/")
+    BaseAddress = new Uri("https://teamsapp-integration.onrender.com/")
 });
 
 await builder.Build().RunAsync();
