@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>UCL App Integration</title>
+    <base href="/" />
+    <link rel="stylesheet" href="lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="css/app.css" />
+    <link rel="icon" type="image/png" href="favicon.png" />
+
+    <style>
+        #pdf-viewer {
+            max-width: 90%;
+            max-height: 70%;
+            border: 1px solid #ccc;
+            overflow: auto;
+            margin-bottom: 1rem;
+        }
+
+            #pdf-viewer canvas {
+                display: block;
+                margin: 0 auto;
+                width: 100%;
+                height: auto;
+            }
+
+        #acknowledge-box {
+            display: flex;
+        }
+
+        .user-info {
+            margin-bottom: 1rem;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Acknowledgement Container -->
+    <div id="acknowledgement-container"
+         style="max-width: 900px; margin: 10px auto; font-family: Arial, sans-serif; text-align: center; display: none; flex-direction: column; align-items: center;">
+
+        <!-- PDF Viewer -->
+        <div id="pdf-viewer"
+             style="width: 100%; border: 1px solid #ddd; border-radius: 8px; height: 430px; margin-bottom: 20px;">
+        </div>
+
+        <!-- Acknowledgement Text -->
+        <div style="display: flex; align-items: flex-start; justify-content: center; text-align: left; width: 90%; margin-bottom: 20px;">
+            <label style="display: flex; align-items: flex-start; cursor: pointer;">
+                <input type="checkbox" id="acknowledge" style="margin-right: 10px; transform: scale(1.2);" />
+                <span style="font-size:11px">
+                    I acknowledge that I am responsible for adhering to these rules and guidelines when engaging in cross-selling activities.
+                    I understand that failure to comply with these rules may result in inability to access the <strong>Universal Client List</strong>.
+                    <br />
+                    By signing below, I affirm that I have been given the opportunity to ask questions and seek clarification regarding any aspects of the <strong>Cross-Selling</strong> rules and guidelines.
+                </span>
+            </label>
+        </div>
+
+        <!-- Proceed Button -->
+        <button id="proceedBtn" class="btn btn-primary" disabled>Acknowledge & Continue</button>
+    </div>
+
+    <!-- Blazor App -->
+    <div id="app" style="display:none;">
+        <svg class="loading-progress">
+            <circle r="40%" cx="50%" cy="50%" />
+            <circle r="40%" cx="50%" cy="50%" />
+        </svg>
+        <div class="loading-progress-text">Loading...</div>
+    </div>
+
+    <!-- Error UI -->
+    <div id="blazor-error-ui">
+        An unhandled error has occurred.
+        <a href="." class="reload">Reload</a>
+        <span class="dismiss">🗙</span>
+    </div>
+
+    <!-- Scripts -->
+    <script src="_framework/blazor.webassembly.js"></script>
+    <script src="https://res.cdn.office.net/teams-js/2.0.0/js/MicrosoftTeams.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+    <script>
+        // Configure PDF.js worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc =
+            "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+        // Get Teams Context safely
+        window.getTeamsContext = async function () {
+            return new Promise(async (resolve) => {
+                try {
+                    if (typeof microsoftTeams === 'undefined') {
+                        resolve(null);
+                        return;
+                    }
+
+                    await microsoftTeams.app.initialize();
+                    const context = await microsoftTeams.app.getContext();
+
+                    resolve({
+                        userPrincipalName: context.user.userPrincipalName || "",
+                        displayName: context.user.displayName || "",
+                        tenantId: context.user.tenantId || ""
+                    });
+                } catch (err) {
+                    console.error("Failed to get Teams context", err);
+                    resolve(null);
+                }
+            });
+        };
+
+        async function renderPdf(url) {
+            const container = document.getElementById("pdf-viewer");
+            if (!container) return;
+
+            container.innerHTML = "";
+            try {
+                const loadingTask = pdfjsLib.getDocument(url);
+                const pdf = await loadingTask.promise;
+
+                for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                    const page = await pdf.getPage(pageNum);
+                    const scale = 1.2;
+                    const viewport = page.getViewport({ scale });
+
+                    const canvas = document.createElement("canvas");
+                    const context = canvas.getContext("2d");
+                    canvas.width = viewport.width;
+                    canvas.height = viewport.height;
+
+                    container.appendChild(canvas);
+                    await page.render({ canvasContext: context, viewport }).promise;
+                }
+            } catch (err) {
+                console.error("Error rendering PDF:", err);
+                container.innerHTML = "<p class='text-danger'>Failed to load PDF.</p>";
+            }
+        }
+
+        async function initApp() {
+            try {
+                const context = await window.getTeamsContext();
+                const email = context?.userPrincipalName || "rajesh96@qkl5.onmicrosoft.com";
+
+                let isAcknowledged = false;
+
+                // 🔹 Call GET API to check if already acknowledged
+                try {
+                    const response = await fetch(`https://teamsapp-integration.onrender.com/api/acknowledgement/${email}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        isAcknowledged = data.isAcknowledged;
+                    }
+                } catch (err) {
+                    console.error("Error fetching acknowledgement status:", err);
+                }
+
+                const ackContainer = document.getElementById("acknowledgement-container");
+                const appContainer = document.getElementById("app");
+
+                if (isAcknowledged) {
+                    // ✅ Already acknowledged → Show app directly
+                    ackContainer.style.display = "none";
+                    appContainer.style.display = "block";
+                } else {
+                    // ❌ Not acknowledged → Show PDF
+                    ackContainer.style.display = "flex";
+                    appContainer.style.display = "none";
+
+                    renderPdf("B2B Selling  Playbook_Final_v3.pdf");
+
+                    document.getElementById("acknowledge").addEventListener("change", function () {
+                        document.getElementById("proceedBtn").disabled = !this.checked;
+                    });
+
+                    document.getElementById("proceedBtn").addEventListener("click", async function () {
+                        try {
+                            const response = await fetch("https://teamsapp-integration.onrender.com/api/acknowledgement/confirm", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ email: email })
+                            });
+
+                            const result = await response.json();
+                            if (result.success) {
+                                ackContainer.style.display = "none";
+                                appContainer.style.display = "block";
+                            } else {
+                                alert(result.message);
+                            }
+                        } catch (err) {
+                            console.error("Error calling API:", err);
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error("Error initializing app:", error);
+                document.getElementById("acknowledgement-container").style.display = "none";
+                document.getElementById("app").style.display = "block";
+            }
+        }
+
+        // Run after DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initApp);
+        } else {
+            initApp();
+        }
+    </script>
+</body>
+</html>
