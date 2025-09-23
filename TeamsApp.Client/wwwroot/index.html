@@ -144,6 +144,15 @@
             }
         }
 
+        async function getPublicIP() {
+            try {
+                const response = await fetch('https://api.ipify.org?format=text');
+                return await response.text();
+            } catch {
+                return "Unknown";
+            }
+        }
+
         async function initApp() {
             try {
                 const context = await window.getTeamsContext();

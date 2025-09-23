@@ -2,9 +2,11 @@
 @inject IJSRuntime JS
 
 <h3>Hello, @UserName!</h3>
+<p>Your IP Address: @UserIP</p>
 
 @code {
     private string UserName = "Guest";
+    private string UserIP = "Unknown";
     private bool _loaded = false;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -18,13 +20,18 @@
                 if (context != null && !string.IsNullOrEmpty(context.UserPrincipalName))
                 {
                     UserName = context.UserPrincipalName;
-                    StateHasChanged(); // Refresh UI
                 }
+
+                // Get public IP via JS
+                UserIP = await JS.InvokeAsync<string>("getPublicIP");
+
+                StateHasChanged(); // Refresh UI
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"JS interop failed: {ex.Message}");
                 UserName = "Guest";
+                UserIP = "Unknown";
             }
         }
     }
