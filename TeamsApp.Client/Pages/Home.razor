@@ -1,8 +1,11 @@
 ﻿@page "/"
 @inject IJSRuntime JS
+@inject NavigationManager Navigation
 
 <h3>Hello, @UserName!</h3>
 <p>Your IP Address: @UserIP</p>
+
+<button @onclick="OpenPdf">Open PDF</button>
 
 @code {
     private string UserName = "Guest";
@@ -16,13 +19,14 @@
             _loaded = true;
             try
             {
+                // Get Teams context
                 var context = await JS.InvokeAsync<TeamsContext>("getTeamsContext");
                 if (context != null && !string.IsNullOrEmpty(context.UserPrincipalName))
                 {
                     UserName = context.UserPrincipalName;
                 }
 
-                // Get public IP via JS
+                // Get public IP from JS
                 UserIP = await JS.InvokeAsync<string>("getPublicIP");
 
                 StateHasChanged(); // Refresh UI
@@ -34,6 +38,12 @@
                 UserIP = "Unknown";
             }
         }
+    }
+
+    private async Task OpenPdf()
+    {
+        var url = Navigation.ToAbsoluteUri("assets/B2B Selling Playbook.pdf").ToString();
+        await JS.InvokeVoidAsync("openFileSmart", url);
     }
 
     public class TeamsContext
