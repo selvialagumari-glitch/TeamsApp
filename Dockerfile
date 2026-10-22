@@ -2,6 +2,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /app
 
+
 # Copy solution and project files
 COPY *.sln . 
 COPY TeamsApp.Server/TeamsApp.Server.csproj ./TeamsApp.Server/
