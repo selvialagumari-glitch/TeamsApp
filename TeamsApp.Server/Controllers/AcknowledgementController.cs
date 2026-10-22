@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using TeamsApp.Shared;
 using TeamsApp.Server.Data;
 
-namespace TeamsApp.Server.Controllers
+namespace TeamsApp.Server.Controller
 {
     [ApiController]
     [Route("api/[controller]")]
